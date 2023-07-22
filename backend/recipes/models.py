@@ -1,6 +1,9 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
+
+User = get_user_model()
 
 
 class Tag(models.Model):
@@ -57,7 +60,8 @@ class Recipe(models.Model):
         validators=MinValueValidator(1)
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
+        # settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='recipes'
     )
@@ -115,12 +119,12 @@ class Subscrption(models.Model):
     """Подписка на авторов рецептов"""
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='follower'
     )
     following = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='following'
     )
@@ -138,7 +142,7 @@ class Favorite(models.Model):
     """Избранные рецепты"""
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE
     )
     recipe = models.ForeignKey(
