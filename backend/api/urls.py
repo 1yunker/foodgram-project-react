@@ -13,12 +13,10 @@ router.register(
     basename='favorite')
 router.register('users', views.UserViewSet, basename='users')
 
-auth_patterns = [
-    path('token/login/', views.obtain_token, name='login'),
-    path('token/logout/', views.delete_token, name='logout'),
-]
 
 urlpatterns = [
-    path('auth/', include(auth_patterns)),
+    path('auth/token/login/', views.obtain_token, name='obtain_token'),
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls), name='api-root')
 ]

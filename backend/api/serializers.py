@@ -15,7 +15,7 @@ class TokenLoginSerializer(serializers.Serializer):
         required=True,
         max_length=settings.MAX_LENGTH_PASSWORD,
     )
-    email = serializers.CharField(
+    email = serializers.EmailField(
         required=True,
         max_length=settings.MAX_LENGTH_EMAIL,
         # validators=(UnicodeUsernameValidator(), username_validator,)

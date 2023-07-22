@@ -17,10 +17,10 @@ class User(AbstractUser):
         verbose_name='Электронная почта',
         unique=True,
     )
-    token = models.TextField(
-        'Токен авторизации',
-        blank=True,
-    )
+    # token = models.TextField(
+    #     'Токен авторизации',
+    #     blank=True,
+    # )
 
     class Meta:
         ordering = ('username',)

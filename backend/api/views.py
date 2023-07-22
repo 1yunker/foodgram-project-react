@@ -6,9 +6,10 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 
-from api.serializers import (IngredientSerializer, TagSerializer,
-                             RecipeSerializer, TokenLoginSerializer,
-                             UserSerializer, UserMeSerializer)
+# from api.serializers import (IngredientSerializer, TagSerializer,
+#                              RecipeSerializer, TokenLoginSerializer,
+#                              UserSerializer, UserMeSerializer)
+from api.serializers import TokenLoginSerializer
 # from reviews.models import Category, Genre, Review, Title
 
 User = get_user_model()
@@ -22,9 +23,4 @@ def obtain_token(request):
     email = serializer.validated_data.get('email')
     user = get_object_or_404(User, password=password, email=email)
     token = AccessToken.for_user(user)
-    return Response({'auth_token': str(token)}, status.HTTP_200_OK)
-
-
-@api_view(['POST'])
-def delete_token(request):
-    pass
+    return Response({'auth_token': str(token)}, status.HTTP_201_CREATED)
