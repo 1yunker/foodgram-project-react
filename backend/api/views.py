@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -8,7 +8,8 @@ from rest_framework_simplejwt.tokens import AccessToken
 from djoser.views import UserViewSet
 
 from api.serializers import (IngredientSerializer, TagSerializer,
-                             RecipeSerializer, TokenLoginSerializer,)
+                             TokenLoginSerializer,)
+#                              RecipeSerializer, )
 #                              UserSerializer, UserMeSerializer)
 
 from recipes.models import Ingredient, Tag
