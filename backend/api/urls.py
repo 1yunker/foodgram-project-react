@@ -11,7 +11,7 @@ router.register('tags', views.TagViewSet, basename='tags')
 #     r'recipes/(?P<recipe_id>\d+)/favorite',
 #     views.FavoriteViewSet,
 #     basename='favorite')
-# router.register('users', views.UserViewSet, basename='users')
+router.register('users', views.CustomUserViewSet, basename='users')
 
 
 urlpatterns = [
