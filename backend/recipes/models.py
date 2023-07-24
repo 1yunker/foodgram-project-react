@@ -55,7 +55,7 @@ class Recipe(models.Model):
         upload_to='recipes/images/',
         null=True,
         default=None
-        )
+    )
     cooking_time = models.PositiveSmallIntegerField(
         validators=MinValueValidator(1)
     )
