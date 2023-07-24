@@ -15,8 +15,8 @@ router.register('tags', views.TagViewSet, basename='tags')
 
 
 urlpatterns = [
-    path('auth/token/login/', views.obtain_token, name='obtain_token'),
+    path('', include(router.urls), name='api-root'),
     path('auth/', include('djoser.urls')),
+    # path('auth/token/login/', views.obtain_token, name='obtain_token'),
     path('auth/', include('djoser.urls.authtoken')),
-    path('', include(router.urls), name='api-root')
 ]
