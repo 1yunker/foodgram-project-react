@@ -10,6 +10,7 @@ from users.validators import username_validator
 class User(AbstractUser):
     username = models.CharField(
         max_length=settings.MAX_LENGTH_USERNAME,
+        unique=True,
         validators=(UnicodeUsernameValidator(), username_validator,),
     )
     email = models.EmailField(
