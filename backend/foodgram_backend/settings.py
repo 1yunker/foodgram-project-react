@@ -147,6 +147,7 @@ REST_FRAMEWORK = {
 
 }
 
+AUTH_USER_MODEL = 'users.User'
 
 # Constants
 MAX_LENGTH_NAME = 128

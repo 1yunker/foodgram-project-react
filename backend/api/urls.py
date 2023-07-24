@@ -6,12 +6,12 @@ from api import views
 router = DefaultRouter()
 router.register('ingredients', views.IngredientViewSet, basename='ingredients')
 router.register('tags', views.TagViewSet, basename='tags')
-router.register('recipes', views.RecipeViewSet, basename='recipes')
-router.register(
-    r'recipes/(?P<recipe_id>\d+)/favorite',
-    views.FavoriteViewSet,
-    basename='favorite')
-router.register('users', views.UserViewSet, basename='users')
+# router.register('recipes', views.RecipeViewSet, basename='recipes')
+# router.register(
+#     r'recipes/(?P<recipe_id>\d+)/favorite',
+#     views.FavoriteViewSet,
+#     basename='favorite')
+# router.register('users', views.UserViewSet, basename='users')
 
 
 urlpatterns = [

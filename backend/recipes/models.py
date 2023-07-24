@@ -1,9 +1,6 @@
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
-
-User = get_user_model()
 
 
 class Tag(models.Model):
@@ -35,6 +32,7 @@ class Ingredient(models.Model):
     name = models.CharField(max_length=settings.MAX_LENGTH_NAME)
     measurement_unit = models.ForeignKey(
         Measurement,
+        null=True,
         on_delete=models.SET_NULL,
         related_name='ingredients'
     )
@@ -57,11 +55,11 @@ class Recipe(models.Model):
         default=None
     )
     cooking_time = models.PositiveSmallIntegerField(
-        validators=MinValueValidator(1)
+        validators=[MinValueValidator(1), ]
     )
     author = models.ForeignKey(
-        User,
-        # settings.AUTH_USER_MODEL,
+        # User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='recipes'
     )
@@ -78,14 +76,14 @@ class Recipe(models.Model):
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ('-pub_date')
+        ordering = ('-pub_date',)
 
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.PositiveSmallIntegerField(
-        validators=MinValueValidator(1))
+        validators=[MinValueValidator(1), ])
 
     class Meta:
         constraints = (
@@ -119,12 +117,12 @@ class Subscrption(models.Model):
     """Подписка на авторов рецептов"""
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='follower'
     )
     following = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='following'
     )
@@ -142,7 +140,7 @@ class Favorite(models.Model):
     """Избранные рецепты"""
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
     )
     recipe = models.ForeignKey(
@@ -153,7 +151,7 @@ class Favorite(models.Model):
         verbose_name_plural = 'Избранные'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'], name='unique_recipes'
+                fields=['user', 'recipe'], name='unique_vaforites'
             )
         ]
 
@@ -162,7 +160,7 @@ class ShoppingCart(models.Model):
     """Список покупок"""
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
     )
     recipe = models.ForeignKey(
@@ -172,6 +170,6 @@ class ShoppingCart(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'], name='unique_recipes'
+                fields=['user', 'recipe'], name='unique_shopping_items'
             )
         ]
