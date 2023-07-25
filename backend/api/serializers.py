@@ -47,7 +47,7 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeGetSerializer(serializers.ModelSerializer):
     ingredients = IngredientSerializer(many=True)
     tags = TagSerializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
@@ -55,7 +55,18 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = '__all__'
-        read_only_fields = ('owner',)
+
+
+class RecipeCreateSerializer(serializers.ModelSerializer):
+    ingredients = IngredientSerializer(many=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all()
+    )
+
+    class Meta:
+        fields = ('name', 'text', 'image', 'cooking_time',
+                  'ingredients', 'tags')
+        model = Recipe
 
 
 class UserSerializer(serializers.ModelSerializer):

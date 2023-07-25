@@ -1,22 +1,38 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from djoser.views import UserViewSet
+from djoser import utils
+from djoser.views import UserViewSet, TokenCreateView
 
+# from api.filters import RecipeFilter
+from api.permissions import IsOwner
 from api.serializers import (IngredientSerializer, TagSerializer,
-                             TokenLoginSerializer,)
-#                              RecipeSerializer, )
+                             TokenLoginSerializer,
+                             RecipeGetSerializer, RecipeCreateSerializer)
 #                              UserSerializer, UserMeSerializer)
 
-from recipes.models import Ingredient, Tag
+from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
+                            Subscrption, Tag)
 
 
 class CustomUserViewSet(UserViewSet):
     pass
+
+
+class CustomTokenCreateView(TokenCreateView):
+
+    def _action(self, serializer):
+        token = utils.login_user(self.request, serializer.user)
+        token_serializer_class = settings.SERIALIZERS.token
+        return Response(
+            data=token_serializer_class(token).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 @api_view(['POST'])
@@ -33,19 +49,43 @@ def obtain_token(request):
     return Response({'auth_token': str(token)}, status.HTTP_201_CREATED)
 
 
-class IngredientTagViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
-                           mixins.ListModelMixin, viewsets.GenericViewSet):
-    lookup_field = 'slug'
-    # permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
     search_fields = ('name',)
 
 
-class IngredientViewSet(IngredientTagViewSet):
-    queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
-
-
-class TagViewSet(IngredientTagViewSet):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    permission_classes = (IsOwner,)
+    http_method_names = ('get', 'post', 'patch', 'delete',)
+    filter_backends = (DjangoFilterBackend,)
+    # filterset_class = RecipeFilter
+
+    def get_serializer_class(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return RecipeGetSerializer
+        return RecipeCreateSerializer
+
+
+class FavoriteViewSet(viewsets.ModelViewSet):
+    queryset = Favorite.objects.all()
+    permission_classes = (IsOwner,)
+    http_method_names = ('post', 'delete',)
+
+
+class ShoppingCartViewSet(viewsets.ModelViewSet):
+    queryset = ShoppingCart.objects.all()
+    permission_classes = (IsOwner,)
+    http_method_names = ('post', 'delete',)
+
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    queryset = Subscrption.objects.all()
+    permission_classes = (permissions.IsAuthenticated,)
+    http_method_names = ('get', 'post', 'delete',)
