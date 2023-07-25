@@ -10,13 +10,17 @@ class Tag(models.Model):
         max_length=settings.MAX_LENGTH_NAME,
         unique=True
     )
-    color = models.CharField(max_length=7)
+    color = models.CharField(
+        max_length=7,
+        unique=True)
     slug = models.SlugField(
         max_length=settings.MAX_LENGTH_SLUG,
         unique=True
     )
 
     class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
         ordering = ('name',)
 
 
@@ -24,6 +28,9 @@ class Measurement(models.Model):
     """Единица измерения"""
 
     name = models.CharField(max_length=10, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Ingredient(models.Model):
@@ -38,12 +45,20 @@ class Ingredient(models.Model):
     )
 
     class Meta:
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
         ordering = ('name',)
 
 
 class Recipe(models.Model):
     """Рецепт"""
 
+    author = models.ForeignKey(
+        # User,
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='recipes'
+    )
     name = models.CharField(
         max_length=settings.MAX_LENGTH_NAME,
         unique=True
@@ -57,18 +72,12 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), ]
     )
-    author = models.ForeignKey(
-        # User,
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='recipes'
-    )
-    ingredient = models.ManyToManyField(
+    ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient',
         related_name='recipes'
     )
-    tag = models.ManyToManyField(
+    tags = models.ManyToManyField(
         Tag,
         through='RecipeTag',
         related_name='recipes'
@@ -76,6 +85,8 @@ class Recipe(models.Model):
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
         ordering = ('-pub_date',)
 
 

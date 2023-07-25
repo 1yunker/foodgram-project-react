@@ -1,20 +1,18 @@
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+# from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, permissions, status, viewsets
-from rest_framework.decorators import api_view
+# from rest_framework import filters, mixins,
+from rest_framework import permissions, status, viewsets
+# from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import AccessToken
 
 from djoser import utils
 from djoser.views import UserViewSet, TokenCreateView
 
-# from api.filters import RecipeFilter
+from api.filters import RecipeFilter
 from api.permissions import IsOwner
 from api.serializers import (IngredientSerializer, TagSerializer,
-                             TokenLoginSerializer,
                              RecipeGetSerializer, RecipeCreateSerializer)
-#                              UserSerializer, UserMeSerializer)
 
 from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
                             Subscrption, Tag)
@@ -35,20 +33,6 @@ class CustomTokenCreateView(TokenCreateView):
         )
 
 
-@api_view(['POST'])
-def obtain_token(request):
-    serializer = TokenLoginSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    password = serializer.validated_data.get('password')
-    email = serializer.validated_data.get('email')
-    user = get_object_or_404(
-        settings.AUTH_USER_MODEL,
-        password=password, email=email
-    )
-    token = AccessToken.for_user(user)
-    return Response({'auth_token': str(token)}, status.HTTP_201_CREATED)
-
-
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
@@ -65,7 +49,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwner,)
     http_method_names = ('get', 'post', 'patch', 'delete',)
     filter_backends = (DjangoFilterBackend,)
-    # filterset_class = RecipeFilter
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
