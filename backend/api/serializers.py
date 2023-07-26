@@ -38,7 +38,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = '__all__'
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',)
         model = User
 
 
@@ -58,6 +58,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all()
     )
+
+    def create(self, validated_data):
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
     class Meta:
         fields = ('name', 'text', 'image', 'cooking_time',

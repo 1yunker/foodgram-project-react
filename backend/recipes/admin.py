@@ -5,17 +5,20 @@ from recipes.models import Ingredient, Recipe, Tag
 
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'measurement_unit',)
-    search_fields = ('name', 'measurement_unit',)
-    list_filter = ('measurement_unit',)
+    search_fields = ('name',)
     list_editable = ('name', 'measurement_unit',)
+    list_filter = ('measurement_unit',)
+    list_per_page = 10
+    list_select_related = True
     empty_value_display = '-пусто-'
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'author',)
-    search_fields = ('pk', 'author', 'name',)
-    list_filter = ('author', 'tags', 'cooking_time', 'pub_date',)
-    list_editable = ('author', 'name', 'text', 'cooking_time',)
+    list_display = ('pk', 'author', 'name', 'text', 'image',
+                    'cooking_time', 'pub_date',)
+    search_fields = ('author', 'name',)
+    list_filter = ('author', 'name', 'tags', 'cooking_time',)
+    list_select_related = True
     empty_value_display = '-пусто-'
 
 
