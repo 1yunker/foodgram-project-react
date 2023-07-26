@@ -19,7 +19,7 @@ router.register('recipes', RecipeViewSet, basename='recipes')
 #     views.ShoppingCartViewSet,
 #     basename='shopping_cart')
 # router.register(
-#     'users/subscriptions',
+#     'users/subscribe',
 #     SubscriptionViewSet,
 #     basename='subscriptions')
 

@@ -23,6 +23,9 @@ class Tag(models.Model):
         verbose_name_plural = 'Теги'
         ordering = ('name',)
 
+    def __str__(self):
+        return self.name
+
 
 class Measurement(models.Model):
     """Единица измерения"""
@@ -48,6 +51,9 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ('name',)
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -88,6 +94,9 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ('-pub_date',)
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):

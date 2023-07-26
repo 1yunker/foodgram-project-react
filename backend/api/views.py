@@ -36,12 +36,16 @@ class CustomTokenCreateView(TokenCreateView):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    http_method_names = ('get',)
+    pagination_class = None
     search_fields = ('name',)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    http_method_names = ('get',)
+    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):

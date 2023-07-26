@@ -12,9 +12,9 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'author', 'name', 'text', 'cooking_time', 'pub_date')
-    search_fields = ('pk', 'author', 'name')
-    list_filter = ('author', 'tags', 'cooking_time', 'pub_date')
+    list_display = ('pk', 'name', 'author',)
+    search_fields = ('pk', 'author', 'name',)
+    list_filter = ('author', 'tags', 'cooking_time', 'pub_date',)
     list_editable = ('author', 'name', 'text', 'cooking_time',)
     empty_value_display = '-пусто-'
 
