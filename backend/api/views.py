@@ -15,8 +15,8 @@ from api.permissions import IsOwner
 from api.serializers import (IngredientSerializer, TagSerializer,
                              RecipeGetSerializer, RecipeCreateSerializer)
 
-from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
-                            Subscrption, Tag)
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from users.models import Subscrption
 
 
 class CustomUserViewSet(UserViewSet):

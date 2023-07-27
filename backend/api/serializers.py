@@ -30,12 +30,6 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit',)
 
 
-class RecipeIngredientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RecipeIngredient
-        fields = ('id', 'amount')
-
-
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
@@ -48,9 +42,17 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
 
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='ingredient')
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'amount')
+
+
 class RecipeGetSerializer(serializers.ModelSerializer):
     author = UserSerializer()
-    ingredients = RecipeIngredientSerializer(many=True)
+    # ingredients = RecipeIngredientSerializer(many=True)
     tags = TagSerializer(many=True)
     is_favorited = serializers.BooleanField()
     is_in_shopping_cart = serializers.BooleanField()
@@ -73,11 +75,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
         for ingredient in ingredients:
-            current_ingredient = Ingredient.objects.get(pk=ingredient.id)
+            ingredient_id = ingredient.get('ingredient')
+            current_ingredient = Ingredient.objects.get(pk=ingredient_id)
             RecipeIngredient.objects.create(
                 recipe=recipe,
                 ingredient=current_ingredient,
-                amount=ingredient.amount
+                amount=ingredient.get('amount')
             )
         for tag in tags:
             RecipeTag.objects.create(

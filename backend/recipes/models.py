@@ -133,29 +133,6 @@ class RecipeTag(models.Model):
         return f'{self.recipe} {self.tag}'
 
 
-class Subscrption(models.Model):
-    """Подписка на авторов рецептов"""
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='follower'
-    )
-    following = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='following'
-    )
-
-    class Meta:
-        verbose_name_plural = 'Подписки'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'following'], name='unique_following'
-            )
-        ]
-
-
 class Favorite(models.Model):
     """Избранные рецепты"""
 
@@ -168,12 +145,16 @@ class Favorite(models.Model):
         on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name_plural = 'Избранные'
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранные рецепты'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'], name='unique_vaforites'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user} {self.recipe}'
 
 
 class ShoppingCart(models.Model):
@@ -188,6 +169,8 @@ class ShoppingCart(models.Model):
         on_delete=models.CASCADE)
 
     class Meta:
+        verbose_name = 'Покупка'
+        verbose_name_plural = 'Список покупок'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'], name='unique_shopping_items'
