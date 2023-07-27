@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from recipes.models import Ingredient, Recipe, Tag
+from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 
 User = get_user_model()
 
@@ -30,6 +30,12 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit',)
 
 
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'amount')
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
@@ -44,9 +50,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RecipeGetSerializer(serializers.ModelSerializer):
     author = UserSerializer()
-    ingredients = IngredientSerializer(many=True)
+    ingredients = RecipeIngredientSerializer(many=True)
     tags = TagSerializer(many=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    is_favorited = serializers.BooleanField()
+    is_in_shopping_cart = serializers.BooleanField()
 
     class Meta:
         model = Recipe
@@ -54,16 +61,54 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
-    ingredients = IngredientSerializer(many=True)
+    ingredients = RecipeIngredientSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all()
+        queryset=Tag.objects.all(),
+        many=True
     )
+    image = Base64ImageField(required=False, allow_null=True)
 
     def create(self, validated_data):
-        return super().create(validated_data)
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(**validated_data)
+        for ingredient in ingredients:
+            current_ingredient = Ingredient.objects.get(pk=ingredient.id)
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=current_ingredient,
+                amount=ingredient.amount
+            )
+        for tag in tags:
+            RecipeTag.objects.create(
+                recipe=recipe,
+                tag=tag
+            )
+        return recipe
 
-    def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
+    # def update(self, instance, validated_data):
+    #     instance.name = validated_data.get('name', instance.name)
+    #     instance.color = validated_data.get('color', instance.color)
+    #     instance.birth_year = validated_data.get(
+    #         'birth_year', instance.birth_year
+    #     )
+    #     instance.image = validated_data.get('image', instance.image)
+
+    #     if 'achievements' not in validated_data:
+    #         instance.save()
+    #         return instance
+
+    #     achievements_data = validated_data.pop('achievements')
+    #     lst = []
+    #     for achievement in achievements_data:
+    #         current_achievement, status = Achievement.objects.get_or_create(
+    #             **achievement
+    #         )
+    #         lst.append(current_achievement)
+    #     instance.achievements.set(lst)
+
+    #     instance.save()
+    #     return instance
 
     class Meta:
         fields = ('name', 'text', 'image', 'cooking_time',

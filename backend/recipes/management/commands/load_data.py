@@ -24,6 +24,7 @@ class Command(BaseCommand):
                 data = []
                 for row in reader:
                     m_unit, _ = Measurement.objects.get_or_create(name=row[1])
-                    data.append(model(name=row[0], measurement_unit=m_unit))
+                    data.append(model(name=row[0].capitalize(),
+                                      measurement_unit=m_unit))
             model.objects.bulk_create(data)
         self.stdout.write(self.style.SUCCESS('Данные успешно загружены!'))
