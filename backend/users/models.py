@@ -20,6 +20,8 @@ class User(AbstractUser):
         blank=False,
     )
 
+    REQUIRED_FIELDS = ('first_name', 'last_name',)
+
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
@@ -55,3 +57,6 @@ class Subscrption(models.Model):
                 fields=['user', 'following'], name='unique_following'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user} подписан на {self.following}'

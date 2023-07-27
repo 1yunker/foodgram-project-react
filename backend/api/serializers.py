@@ -3,9 +3,16 @@ import base64
 # from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+
+# from djoser.conf import settings
+from djoser.serializers import UserCreateSerializer
+
 from rest_framework import serializers
+from rest_framework.fields import CurrentUserDefault
+from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
+from users.models import Subscrption
 
 User = get_user_model()
 
@@ -36,10 +43,23 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class UserSerializer(serializers.ModelSerializer):
+class SpecialUserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    def get_is_subscribed(self, obj):
+        return obj.following.filter(user=self.context['request'].user).exists()
+
     class Meta:
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',)
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed',)
         model = User
+
+
+class CustomUserCreateSerializer(UserCreateSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'password',)
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -47,11 +67,11 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'amount')
+        fields = ('id', 'amount',)
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):
-    author = UserSerializer()
+    author = SpecialUserSerializer()
     # ingredients = RecipeIngredientSerializer(many=True)
     tags = TagSerializer(many=True)
     is_favorited = serializers.BooleanField()
@@ -117,3 +137,33 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         fields = ('name', 'text', 'image', 'cooking_time',
                   'ingredients', 'tags')
         model = Recipe
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+        default=CurrentUserDefault()
+    )
+    following = serializers.SlugRelatedField(
+        queryset=User.objects.all(),
+        slug_field='username'
+    )
+
+    class Meta:
+        fields = ('user', 'following')
+        model = Subscrption
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscrption.objects.all(),
+                fields=['user', 'following'],
+                message='Подписка на данного автора уже оформлена!'
+            )
+        ]
+
+    def validate_following(self, following):
+        if self.context['request'].user == following:
+            raise serializers.ValidationError(
+                'Подписываться на себя запрещено!'
+            )
+        return following
