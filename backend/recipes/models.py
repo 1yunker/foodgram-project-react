@@ -114,7 +114,7 @@ class RecipeIngredient(models.Model):
         )
 
     def __str__(self):
-        return f'{self.recipe} {self.ingredient}'
+        return f'{self.recipe} {self.ingredient} {self.amount}'
 
 
 class RecipeTag(models.Model):
@@ -138,11 +138,14 @@ class Favorite(models.Model):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='favorites'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE)
+        on_delete=models.CASCADE,
+        related_name='favorites'
+    )
 
     class Meta:
         verbose_name = 'Избранный рецепт'

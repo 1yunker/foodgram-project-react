@@ -50,9 +50,9 @@ class SpecialUserSerializer(serializers.ModelSerializer):
         return obj.following.filter(user=self.context['request'].user).exists()
 
     class Meta:
+        model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
                   'is_subscribed',)
-        model = User
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -62,7 +62,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
                   'password',)
 
 
-class RecipeIngredientSerializer(serializers.ModelSerializer):
+class RecipeCreateIngredientSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient')
 
     class Meta:
@@ -70,20 +70,35 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount',)
 
 
+class RecipeGetIngredientSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='ingredient.id')
+    name = serializers.ReadOnlyField(source='ingredient.name')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit.name'
+    )
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'name', 'measurement_unit',)
+
+
 class RecipeGetSerializer(serializers.ModelSerializer):
-    author = SpecialUserSerializer()
-    # ingredients = RecipeIngredientSerializer(many=True)
+    # author = SpecialUserSerializer()
+    ingredients = RecipeGetIngredientSerializer(many=True)
     tags = TagSerializer(many=True)
-    is_favorited = serializers.BooleanField()
-    is_in_shopping_cart = serializers.BooleanField()
+    # is_favorited = serializers.SerializerMethodField()
+    # is_in_shopping_cart = serializers.BooleanField()
+
+    # def get_is_favorited(self, obj):
+    #     return obj.following.filter(user=self.context['request'].user).exists()
 
     class Meta:
         model = Recipe
-        fields = '__all__'
+        exclude = ('pub_date',)
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
-    ingredients = RecipeIngredientSerializer(many=True)
+    ingredients = RecipeCreateIngredientSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True

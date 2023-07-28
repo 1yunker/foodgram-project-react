@@ -171,12 +171,11 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
-    # 'USERNAME_FIELD': 'username',
-    # 'USER_ID_FIELD': 'id',
     'USER_CREATE_PASSWORD_RETYPE': False,
     'SERIALIZERS': {'user': 'api.serializers.SpecialUserSerializer',
                     'current_user': 'api.serializers.SpecialUserSerializer',
                     'user_create': 'api.serializers.CustomUserCreateSerializer', },
+    'PERMISSIONS': {'user_delete': ['rest_framework.permissions.IsAdminUser'], },
 }
 
 AUTH_USER_MODEL = 'users.User'
