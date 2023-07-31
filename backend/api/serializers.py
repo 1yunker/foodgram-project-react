@@ -8,9 +8,11 @@ from django.core.files.base import ContentFile
 from djoser.serializers import UserCreateSerializer
 
 from rest_framework import serializers
+from rest_framework.decorators import action
 from rest_framework.fields import CurrentUserDefault
 from rest_framework.validators import UniqueTogetherValidator
 
+from api.permissions import IsOwner
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from users.models import User, Subscrption
 
@@ -132,29 +134,43 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
         return recipe
 
-    # def update(self, instance, validated_data):
-    #     instance.name = validated_data.get('name', instance.name)
-    #     instance.color = validated_data.get('color', instance.color)
-    #     instance.birth_year = validated_data.get(
-    #         'birth_year', instance.birth_year
-    #     )
-    #     instance.image = validated_data.get('image', instance.image)
+    @action(permission_classes=(IsOwner,), detail=False,)
+    def update(self, instance, validated_data):
+        # Удаляем данные из подчиненных таблиц
+        RecipeTag.objects.filter(recipe=instance).delete()
+        RecipeIngredient.objects.filter(recipe=instance).delete()
 
-    #     if 'achievements' not in validated_data:
-    #         instance.save()
-    #         return instance
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.image = validated_data.get('image', instance.image)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time
+        )
 
-    #     achievements_data = validated_data.pop('achievements')
-    #     lst = []
-    #     for achievement in achievements_data:
-    #         current_achievement, status = Achievement.objects.get_or_create(
-    #             **achievement
-    #         )
-    #         lst.append(current_achievement)
-    #     instance.achievements.set(lst)
+        tags = validated_data.pop('tags')
+        for tag in tags:
+            RecipeTag.objects.create(
+                recipe=instance,
+                tag=tag
+            )
+        ingredients = validated_data.pop('ingredients')
+        for ingredient in ingredients:
+            ingredient_id = ingredient.get('ingredient')
+            current_ingredient = Ingredient.objects.get(pk=ingredient_id)
+            RecipeIngredient.objects.create(
+                recipe=instance,
+                ingredient=current_ingredient,
+                amount=ingredient.get('amount')
+            )
 
-    #     instance.save()
-    #     return instance
+        instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        return RecipeGetSerializer(
+            instance,
+            context={'request': self.context.get('request')}
+        ).data
 
     class Meta:
         fields = ('name', 'text', 'image', 'cooking_time',
