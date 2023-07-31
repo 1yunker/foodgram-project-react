@@ -75,13 +75,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 class FavoriteViewSet(viewsets.ModelViewSet):
     queryset = Favorite.objects.all()
-    permission_classes = (IsOwner,)
+    permission_classes = (permissions.IsAuthenticated,)
     http_method_names = ('post', 'delete',)
 
 
 class ShoppingCartViewSet(viewsets.ModelViewSet):
     queryset = ShoppingCart.objects.all()
-    permission_classes = (IsOwner,)
+    permission_classes = (permissions.IsAuthenticated,)
     http_method_names = ('post', 'delete',)
 
 
