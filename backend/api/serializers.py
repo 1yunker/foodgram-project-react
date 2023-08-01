@@ -46,9 +46,16 @@ class TagSerializer(serializers.ModelSerializer):
 class SpecialUserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
+    # def get_is_subscribed(self, obj):
+    #     return obj.following.filter(
+    #         user=self.context['request'].user.id).exists()
+
     def get_is_subscribed(self, obj):
-        return obj.following.filter(
-            user=self.context['request'].user.id).exists()
+        user = self.context.get('request').user
+        return (
+            user.is_authenticated
+            and obj.following.filter(user=user).exists()
+        )
 
     class Meta:
         model = User
@@ -236,6 +243,6 @@ class SubscriptionsSerializer(SpecialUserSerializer):
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()
 
-    class Meta:
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count')
+    class Meta(SpecialUserSerializer.Meta):
+        fields = SpecialUserSerializer.Meta.fields + (
+            'recipes', 'recipes_count',)

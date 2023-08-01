@@ -13,30 +13,31 @@ from djoser.views import UserViewSet, TokenCreateView
 from api.filters import RecipeFilter
 from api.permissions import IsOwner
 from api.serializers import (IngredientSerializer, TagSerializer,
-                             RecipeGetSerializer, RecipeCreateSerializer)
+                             RecipeGetSerializer, RecipeCreateSerializer,
+                             SubscriptionsSerializer)
 
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
-from users.models import Subscrption
+from users.models import User
 
 
 class CustomUserViewSet(UserViewSet):
 
     @action(['POST', 'DELETE'], detail=True)
     def subscribe(self, request, *args, **kwargs):
-        # self.get_object = self.get_instance
-        # if request.method == "GET":
-        #     return self.retrieve(request, *args, **kwargs)
-        # elif request.method == "PUT":
-        #     return self.update(request, *args, **kwargs)
-        # elif request.method == "PATCH":
-        #     return self.partial_update(request, *args, **kwargs)
-        # elif request.method == "DELETE":
-        #     return self.destroy(request, *args, **kwargs)
         pass
 
-    @action(['GET'], detail=False)
-    def subscriptions(self, request, *args, **kwargs):
-        pass
+    @action(['GET'], detail=False,
+            permission_classes=(permissions.IsAuthenticated,))
+    def subscriptions(self, request):
+        queryset = User.objects.filter(following__user=request.user)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = SubscriptionsSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+        serializer = SubscriptionsSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CustomTokenCreateView(TokenCreateView):
@@ -106,9 +107,3 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
     queryset = ShoppingCart.objects.all()
     permission_classes = (permissions.IsAuthenticated,)
     http_method_names = ('post', 'delete',)
-
-
-class SubscriptionViewSet(viewsets.ModelViewSet):
-    queryset = Subscrption.objects.all()
-    permission_classes = (permissions.IsAuthenticated,)
-    http_method_names = ('get', 'post', 'delete',)
