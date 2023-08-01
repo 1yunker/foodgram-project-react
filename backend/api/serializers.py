@@ -206,3 +206,36 @@ class FollowSerializer(serializers.ModelSerializer):
                 'Подписываться на себя запрещено!'
             )
         return following
+
+
+class FavoriteGetSerializer(serializers.ModelSerializer):
+    """ Сериализатор для отображения избранного. """
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class SubscriptionsSerializer(SpecialUserSerializer):
+    """ Сериализатор для отображения подписок пользователя. """
+
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        recipes = Recipe.objects.filter(author=obj)
+        limit = request.query_params.get('recipes_limit')
+        if limit:
+            recipes = recipes[:int(limit)]
+        return FavoriteGetSerializer(
+            recipes, many=True, context={'request': request}).data
+
+    def get_recipes_count(self, obj):
+        return Recipe.objects.filter(author=obj).count()
+
+    class Meta:
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count')

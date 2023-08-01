@@ -3,7 +3,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 # from rest_framework import filters, mixins,
 from rest_framework import permissions, status, viewsets
-# from rest_framework.decorators import api_view
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from djoser import utils
@@ -20,7 +20,23 @@ from users.models import Subscrption
 
 
 class CustomUserViewSet(UserViewSet):
-    pass
+
+    @action(['POST', 'DELETE'], detail=True)
+    def subscribe(self, request, *args, **kwargs):
+        # self.get_object = self.get_instance
+        # if request.method == "GET":
+        #     return self.retrieve(request, *args, **kwargs)
+        # elif request.method == "PUT":
+        #     return self.update(request, *args, **kwargs)
+        # elif request.method == "PATCH":
+        #     return self.partial_update(request, *args, **kwargs)
+        # elif request.method == "DELETE":
+        #     return self.destroy(request, *args, **kwargs)
+        pass
+
+    @action(['GET'], detail=False)
+    def subscriptions(self, request, *args, **kwargs):
+        pass
 
 
 class CustomTokenCreateView(TokenCreateView):
@@ -71,6 +87,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    @action(['GET'], detail=False)
+    def download_shopping_cart(self, request):
+        """
+        Скачивает список покупок
+        """
+        pass
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):

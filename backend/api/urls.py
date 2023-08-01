@@ -2,8 +2,8 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from api.views import (IngredientViewSet, RecipeViewSet,
-                       TagViewSet, CustomTokenCreateView,)
-#                       SubscriptionViewSet)
+                       TagViewSet, CustomTokenCreateView,
+                       subscriptions_list,)
 
 router = DefaultRouter()
 router.register('ingredients', IngredientViewSet, basename='ingredients')
@@ -18,10 +18,10 @@ router.register('recipes', RecipeViewSet, basename='recipes')
 #     r'recipes/(?P<recipe_id>\d+)/shopping_cart',
 #     views.ShoppingCartViewSet,
 #     basename='shopping_cart')
-# router.register(
-#     'users/subscriptions',
-#     SubscriptionViewSet,
-#     basename='subscriptions')
+router.register(
+    'users/subscriptions',
+    subscriptions_list,
+    basename='subscriptions')
 # router.register(
 #     'users/(?P<user_id>\d+)/subscribe',
 #     SubscriptionViewSet,
