@@ -3,13 +3,17 @@ from rest_framework.routers import DefaultRouter
 
 from api.views import (IngredientViewSet, RecipeViewSet,
                        TagViewSet, CustomTokenCreateView,
-                       CustomUserViewSet,)
+                       CustomUserViewSet)
 
 router = DefaultRouter()
 router.register('ingredients', IngredientViewSet, basename='ingredients')
 router.register('tags', TagViewSet, basename='tags')
 router.register('recipes', RecipeViewSet, basename='recipes')
 router.register('users', CustomUserViewSet, basename='users')
+# router.register(
+#     r'users/(?P<user_id>\d+)/subscribe',
+#     FollowViewSet,
+#     basename='subscriptions')
 # router.register('recipes/download_shopping_cart', , basename='download')
 # router.register(
 #     r'recipes/(?P<recipe_id>\d+)/favorite',
@@ -19,10 +23,6 @@ router.register('users', CustomUserViewSet, basename='users')
 #     r'recipes/(?P<recipe_id>\d+)/shopping_cart',
 #     views.ShoppingCartViewSet,
 #     basename='shopping_cart')
-# router.register(
-#     'users/subscriptions',
-#     subscriptions_list,
-#     basename='subscriptions')
 
 
 urlpatterns = [

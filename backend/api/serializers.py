@@ -9,12 +9,12 @@ from djoser.serializers import UserCreateSerializer
 
 from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.fields import CurrentUserDefault
-from rest_framework.validators import UniqueTogetherValidator
+# from rest_framework.fields import CurrentUserDefault
+# from rest_framework.validators import UniqueTogetherValidator
 
 from api.permissions import IsOwner
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
-from users.models import User, Subscrption
+from users.models import User
 
 
 class Base64ImageField(serializers.ImageField):
@@ -183,36 +183,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         fields = ('name', 'text', 'image', 'cooking_time',
                   'ingredients', 'tags')
         model = Recipe
-
-
-class FollowSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='username',
-        default=CurrentUserDefault()
-    )
-    following = serializers.SlugRelatedField(
-        queryset=User.objects.all(),
-        slug_field='username'
-    )
-
-    class Meta:
-        fields = ('user', 'following')
-        model = Subscrption
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscrption.objects.all(),
-                fields=['user', 'following'],
-                message='Подписка на данного автора уже оформлена!'
-            )
-        ]
-
-    def validate_following(self, following):
-        if self.context['request'].user == following:
-            raise serializers.ValidationError(
-                'Подписываться на себя запрещено!'
-            )
-        return following
 
 
 class FavoriteGetSerializer(serializers.ModelSerializer):
