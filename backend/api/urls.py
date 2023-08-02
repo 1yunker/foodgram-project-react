@@ -11,11 +11,6 @@ router.register('tags', TagViewSet, basename='tags')
 router.register('recipes', RecipeViewSet, basename='recipes')
 router.register('users', CustomUserViewSet, basename='users')
 # router.register(
-#     r'users/(?P<user_id>\d+)/subscribe',
-#     FollowViewSet,
-#     basename='subscriptions')
-# router.register('recipes/download_shopping_cart', , basename='download')
-# router.register(
 #     r'recipes/(?P<recipe_id>\d+)/favorite',
 #     views.FavoriteViewSet,
 #     basename='favorite')

@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 # from djoser.conf import settings
 from djoser.serializers import UserCreateSerializer
 
-from rest_framework import serializers
+from rest_framework import serializers, permissions
 from rest_framework.decorators import action
 # from rest_framework.fields import CurrentUserDefault
 # from rest_framework.validators import UniqueTogetherValidator
@@ -122,6 +122,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField(required=False, allow_null=True)
 
+    @action(permission_classes=(permissions.IsAuthenticated), detail=False,)
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
@@ -141,7 +142,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
         return recipe
 
-    @action(permission_classes=(IsOwner,), detail=False,)
+    @action(permission_classes=(IsOwner,), detail=True,)
     def update(self, instance, validated_data):
         # Удаляем данные из подчиненных таблиц
         RecipeTag.objects.filter(recipe=instance).delete()
