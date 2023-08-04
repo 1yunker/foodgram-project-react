@@ -182,3 +182,6 @@ class ShoppingCart(models.Model):
                 fields=['user', 'recipe'], name='unique_shopping_items'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user} {self.recipe}'

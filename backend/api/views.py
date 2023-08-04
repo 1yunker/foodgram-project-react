@@ -2,7 +2,7 @@ from django.db import IntegrityError
 # from django.conf import settings
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
+# from django_filters.rest_framework import DjangoFilterBackend
 # from rest_framework import filters, mixins
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -12,7 +12,7 @@ from djoser import utils
 from djoser.conf import settings
 from djoser.views import UserViewSet, TokenCreateView
 
-from api.filters import RecipeFilter
+from api.filters import RecipeFilter, IngredientSearchFilter
 from api.permissions import IsOwner
 from api.serializers import (IngredientSerializer, TagSerializer,
                              RecipeGetSerializer, RecipeCreateSerializer,
@@ -103,8 +103,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     http_method_names = ('get',)
+    filterset_class = IngredientSearchFilter
     pagination_class = None
-    search_fields = ('name',)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -118,7 +118,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsOwner,)
     http_method_names = ('get', 'post', 'patch', 'delete',)
-    filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
