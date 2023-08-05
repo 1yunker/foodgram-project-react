@@ -1,15 +1,17 @@
 from django.db import IntegrityError
+from django.db.models import F, Sum
 # from django.conf import settings
-from django.http import Http404
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 # from django_filters.rest_framework import DjangoFilterBackend
 # from rest_framework import filters, mixins
-from rest_framework import permissions, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
 from djoser import utils
-from djoser.conf import settings
+from djoser.conf import settings as djoser_settings
 from djoser.views import UserViewSet, TokenCreateView
 
 from api.filters import RecipeFilter, IngredientSearchFilter
@@ -18,16 +20,15 @@ from api.serializers import (IngredientSerializer, TagSerializer,
                              RecipeGetSerializer, RecipeCreateSerializer,
                              SubscriptionsSerializer, FavoriteGetSerializer,)
 
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag,)
 from users.models import Subscrption, User
 
 
 class CustomUserViewSet(UserViewSet):
     '''Пользователи'''
-    # pagination_class = LimitPageNumberPagination
 
-    @action(['GET'], detail=False,
-            permission_classes=(permissions.IsAuthenticated,))
+    @action(['GET'], detail=False, permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
         '''Мои подписки'''
         queryset = User.objects.filter(following__user=request.user)
@@ -74,7 +75,7 @@ class CustomUserViewSet(UserViewSet):
         )
 
     @action(['POST', 'DELETE'], detail=True,
-            permission_classes=(permissions.IsAuthenticated,))
+            permission_classes=(IsAuthenticated,))
     def subscribe(self, request, **kwargs):
         try:
             author = get_object_or_404(User, pk=kwargs.get('id'))
@@ -92,7 +93,7 @@ class CustomTokenCreateView(TokenCreateView):
     '''Получить токен авторизации'''
     def _action(self, serializer):
         token = utils.login_user(self.request, serializer.user)
-        token_serializer_class = settings.SERIALIZERS.token
+        token_serializer_class = djoser_settings.SERIALIZERS.token
         return Response(
             data=token_serializer_class(token).data,
             status=status.HTTP_201_CREATED
@@ -121,18 +122,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
-        if self.request.method in permissions.SAFE_METHODS:
+        if self.request.method in SAFE_METHODS:
             return RecipeGetSerializer
         return RecipeCreateSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(['GET'], detail=False,
-            permission_classes=(permissions.IsAuthenticated,))
+    def generate_shopping_list(self, user):
+        if not user.in_shopping_cart.exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        recipes = user.in_shopping_cart.values('recipe')
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__in=recipes).values(
+            name=F('ingredient__name'),
+            measure=F('ingredient__measurement_unit__name')
+        ).annotate(amount=Sum('amount'))
+
+        shopping_list = ('Список покупок:\n\n')
+        shopping_list += '\n'.join([
+            f'{ingredient["name"]} ({ingredient["measure"]}) - '
+            f'{ingredient["amount"]}'
+            for ingredient in ingredients
+        ])
+        return shopping_list
+
+    @action(['GET'], detail=False, permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request):
         '''Скачать список покупок'''
-        pass
+        shopping_list = self.generate_shopping_list(request.user)
+        response = HttpResponse(
+            shopping_list, content_type='shopping_list.txt; charset=utf-8'
+        )
+        return response
 
     def add_to_shopping_cart(self, request, recipe):
         '''Добавить рецепт в список покупок'''
@@ -163,8 +186,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(['POST', 'DELETE'], detail=True,
-            permission_classes=(permissions.IsAuthenticated,))
+            permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, **kwargs):
+        '''Список покупок'''
         try:
             recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         except Http404:
@@ -205,7 +229,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(['POST', 'DELETE'], detail=True,
-            permission_classes=(permissions.IsAuthenticated,))
+            permission_classes=(IsAuthenticated,))
     def favorite(self, request, **kwargs):
         try:
             recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
