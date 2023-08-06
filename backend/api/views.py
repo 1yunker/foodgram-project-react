@@ -1,5 +1,4 @@
 from django.db import IntegrityError
-from django.db.models import F, Sum
 # from django.conf import settings
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -19,18 +18,20 @@ from api.permissions import IsOwner
 from api.serializers import (IngredientSerializer, TagSerializer,
                              RecipeGetSerializer, RecipeCreateSerializer,
                              SubscriptionsSerializer, FavoriteGetSerializer,)
+from api.services import generate_shopping_list
 
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag,)
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Subscrption, User
 
 
 class CustomUserViewSet(UserViewSet):
-    '''Пользователи'''
+    """ Пользователи. """
 
-    @action(['GET'], detail=False, permission_classes=(IsAuthenticated,))
+    @action(['GET'],
+            detail=False,
+            permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
-        '''Мои подписки'''
+        """ Мои подписки. """
         queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -42,7 +43,7 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create_subscribe(self, request, author):
-        '''Подписаться на пользователя'''
+        """ Подписаться на пользователя. """
         if request.user == author:
             return Response(
                 {'errors': 'Подписываться на себя запрещено!'},
@@ -61,7 +62,7 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_subscribe(self, request, author):
-        '''Отписаться от пользователя'''
+        """cОтписаться от пользователя. """
         try:
             Subscrption.objects.get(
                 user=request.user, following=author).delete()
@@ -74,7 +75,8 @@ class CustomUserViewSet(UserViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 
-    @action(['POST', 'DELETE'], detail=True,
+    @action(['POST', 'DELETE'],
+            detail=True,
             permission_classes=(IsAuthenticated,))
     def subscribe(self, request, **kwargs):
         try:
@@ -90,7 +92,7 @@ class CustomUserViewSet(UserViewSet):
 
 
 class CustomTokenCreateView(TokenCreateView):
-    '''Получить токен авторизации'''
+    """ Получить токен авторизации. """
     def _action(self, serializer):
         token = utils.login_user(self.request, serializer.user)
         token_serializer_class = djoser_settings.SERIALIZERS.token
@@ -129,36 +131,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def generate_shopping_list(self, user):
-        if not user.in_shopping_cart.exists():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        recipes = user.in_shopping_cart.values('recipe')
-        ingredients = RecipeIngredient.objects.filter(
-            recipe__in=recipes).values(
-            name=F('ingredient__name'),
-            measure=F('ingredient__measurement_unit__name')
-        ).annotate(amount=Sum('amount'))
-
-        shopping_list = ('Список покупок:\n\n')
-        shopping_list += '\n'.join([
-            f'{ingredient["name"]} ({ingredient["measure"]}) - '
-            f'{ingredient["amount"]}'
-            for ingredient in ingredients
-        ])
-        return shopping_list
-
-    @action(['GET'], detail=False, permission_classes=(IsAuthenticated,))
+    @action(['GET'],
+            detail=False,
+            permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request):
-        '''Скачать список покупок'''
-        shopping_list = self.generate_shopping_list(request.user)
+        """ Скачать список покупок. """
+        if not request.user.in_shopping_cart.exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        shopping_list = generate_shopping_list(request.user)
         response = HttpResponse(
-            shopping_list, content_type='shopping_list.txt; charset=utf-8'
+            shopping_list,
+            content_type='shopping_list.txt; charset=utf-8'
         )
         return response
 
     def add_to_shopping_cart(self, request, recipe):
-        '''Добавить рецепт в список покупок'''
+        """ Добавить рецепт в список покупок. """
         try:
             ShoppingCart.objects.create(user=request.user, recipe=recipe)
         except IntegrityError:
@@ -172,7 +160,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_from_shopping_cart(self, request, recipe):
-        '''Удалить рецепт из списка покупок'''
+        """ Удалить рецепт из списка покупок. """
         try:
             ShoppingCart.objects.get(
                 user=request.user, recipe=recipe).delete()
@@ -185,10 +173,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 
-    @action(['POST', 'DELETE'], detail=True,
+    @action(['POST', 'DELETE'],
+            detail=True,
             permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, **kwargs):
-        '''Список покупок'''
+        """ Список покупок. """
         try:
             recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         except Http404:
@@ -201,7 +190,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return self.delete_from_shopping_cart(request, recipe)
 
     def add_to_favorite(self, request, recipe):
-        '''Добавить рецепт в избранное'''
+        """ Добавить рецепт в избранное. """
         try:
             Favorite.objects.create(user=request.user, recipe=recipe)
         except IntegrityError:
@@ -215,7 +204,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_from_favorite(self, request, recipe):
-        '''Удалить рецепт из избранного'''
+        """ Удалить рецепт из избранного. """
         try:
             Favorite.objects.get(
                 user=request.user, recipe=recipe).delete()
@@ -228,7 +217,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 
-    @action(['POST', 'DELETE'], detail=True,
+    @action(['POST', 'DELETE'],
+            detail=True,
             permission_classes=(IsAuthenticated,))
     def favorite(self, request, **kwargs):
         try:
