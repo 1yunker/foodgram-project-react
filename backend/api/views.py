@@ -1,37 +1,35 @@
 from django.db import IntegrityError
 # from django.conf import settings
-from django.http import HttpResponse, Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
+from djoser import utils
+from djoser.conf import settings as djoser_settings
+from djoser.views import TokenCreateView, UserViewSet
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 # from django_filters.rest_framework import DjangoFilterBackend
 # from rest_framework import filters, mixins
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
-
-from djoser import utils
-from djoser.conf import settings as djoser_settings
-from djoser.views import UserViewSet, TokenCreateView
-
-from api.filters import RecipeFilter, IngredientSearchFilter
-from api.permissions import IsOwner
-from api.serializers import (IngredientSerializer, TagSerializer,
-                             RecipeGetSerializer, RecipeCreateSerializer,
-                             SubscriptionsSerializer, FavoriteGetSerializer,)
-from api.services import generate_shopping_list
-
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Subscrption, User
+
+from api.filters import IngredientSearchFilter, RecipeFilter
+from api.permissions import IsOwner
+from api.serializers import (FavoriteGetSerializer, IngredientSerializer,
+                             RecipeCreateSerializer, RecipeGetSerializer,
+                             SubscriptionsSerializer, TagSerializer)
+from api.services import generate_shopping_list
 
 
 class CustomUserViewSet(UserViewSet):
-    """ Пользователи. """
+    """Пользователи."""
 
     @action(['GET'],
             detail=False,
             permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
-        """ Мои подписки. """
+        """Мои подписки."""
         queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -43,7 +41,7 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create_subscribe(self, request, author):
-        """ Подписаться на пользователя. """
+        """Подписаться на пользователя."""
         if request.user == author:
             return Response(
                 {'errors': 'Подписываться на себя запрещено!'},
@@ -62,7 +60,7 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_subscribe(self, request, author):
-        """cОтписаться от пользователя. """
+        """Отписаться от пользователя."""
         try:
             Subscrption.objects.get(
                 user=request.user, following=author).delete()
@@ -92,7 +90,12 @@ class CustomUserViewSet(UserViewSet):
 
 
 class CustomTokenCreateView(TokenCreateView):
-    """ Получить токен авторизации. """
+    """
+    Получить токен авторизации.
+    Переопределяем метод _action для соответсвия документации API:
+    status = HTTP_201_CREATED
+    """
+
     def _action(self, serializer):
         token = utils.login_user(self.request, serializer.user)
         token_serializer_class = djoser_settings.SERIALIZERS.token

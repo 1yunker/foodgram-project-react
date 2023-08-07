@@ -12,14 +12,15 @@ class User(AbstractUser):
         verbose_name='Пользователь',
         max_length=settings.MAX_LENGTH_USERNAME,
         unique=True,
-        validators=(UnicodeUsernameValidator(), username_validator,),
+        validators=(UnicodeUsernameValidator(), username_validator,)
     )
     email = models.EmailField(
         verbose_name='Электронная почта',
         unique=True,
-        blank=False,
+        blank=False
     )
 
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('first_name', 'last_name',)
 
     class Meta:
@@ -36,7 +37,7 @@ class User(AbstractUser):
 
 
 class Subscrption(models.Model):
-    """Подписка на авторов рецептов"""
+    """Подписка на авторов рецептов."""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -54,7 +55,8 @@ class Subscrption(models.Model):
         verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'following'], name='unique_following'
+                fields=['user', 'following'],
+                name='unique_following'
             )
         ]
 

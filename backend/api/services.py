@@ -4,7 +4,7 @@ from recipes.models import RecipeIngredient
 
 
 def generate_shopping_list(user):
-    '''Формирование списка покупок'''
+    """Формирование списка покупок в текстовом виде."""
 
     recipes = user.in_shopping_cart.values('recipe')
     ingredients = RecipeIngredient.objects.filter(

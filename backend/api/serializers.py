@@ -1,32 +1,17 @@
-# from django.conf import settings
-# from django.contrib.auth import get_user_model
-
-# from djoser.conf import settings
 from djoser.serializers import UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
-
-from rest_framework import serializers, permissions
+from rest_framework import serializers
 from rest_framework.decorators import action
-# from rest_framework.fields import CurrentUserDefault
-# from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.permissions import IsAuthenticated
 
 from api.permissions import IsOwner
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from users.models import User
 
 
-# class Base64ImageField(serializers.ImageField):
-#     def to_internal_value(self, data):
-#         if isinstance(data, str) and data.startswith('data:image'):
-#             format, imgstr = data.split(';base64,')
-#             ext = format.split('/')[-1]
-
-#             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-#         return super().to_internal_value(data)
-
-
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор отображения ингредиента."""
+
     measurement_unit = serializers.SlugRelatedField(
         read_only=True, slug_field='name')
 
@@ -36,24 +21,21 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор отображения тега."""
+
     class Meta:
         model = Tag
         fields = '__all__'
 
 
 class SpecialUserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователя при отображении пользователя."""
+
     is_subscribed = serializers.SerializerMethodField()
 
-    # def get_is_subscribed(self, obj):
-    #     return obj.following.filter(
-    #         user=self.context['request'].user.id).exists()
-
     def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and obj.following.filter(user=user).exists()
-        )
+        return obj.following.filter(
+            user=self.context['request'].user.id).exists()
 
     class Meta:
         model = User
@@ -62,6 +44,8 @@ class SpecialUserSerializer(serializers.ModelSerializer):
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
+    """Сериализатор пользователя при создании пользователя."""
+
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
@@ -69,6 +53,8 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class RecipeCreateIngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор ингредиента при создании рецепта."""
+
     id = serializers.IntegerField(source='ingredient')
 
     class Meta:
@@ -77,6 +63,8 @@ class RecipeCreateIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор ингредиента при отображении рецепта."""
+
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
@@ -89,6 +77,8 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения рецепта."""
+
     tags = TagSerializer(many=True)
     author = SpecialUserSerializer(read_only=True)
     ingredients = serializers.SerializerMethodField()
@@ -96,14 +86,17 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     def get_ingredients(self, obj):
+        """Список ингредиентов."""
         ingredients = RecipeIngredient.objects.filter(recipe=obj)
         return RecipeIngredientSerializer(ingredients, many=True).data
 
     def get_is_favorited(self, obj):
+        """Находится ли рецепт в избранном."""
         return obj.in_favorites.filter(
             user=self.context['request'].user.id).exists()
 
     def get_is_in_shopping_cart(self, obj):
+        """Находится ли рецепт в корзине."""
         return obj.in_shopping_cart.filter(
             user=self.context['request'].user.id).exists()
 
@@ -113,6 +106,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания рецепта."""
+
     ingredients = RecipeCreateIngredientSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
@@ -120,7 +115,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
 
-    @action(permission_classes=(permissions.IsAuthenticated), detail=False,)
+    @action(
+        permission_classes=(IsAuthenticated,),
+        detail=False,
+    )
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
@@ -140,7 +138,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
         return recipe
 
-    @action(permission_classes=(IsOwner,), detail=True,)
+    @action(
+        permission_classes=(IsOwner,),
+        detail=True,
+    )
     def update(self, instance, validated_data):
         # Удаляем данные из подчиненных таблиц
         RecipeTag.objects.filter(recipe=instance).delete()
@@ -185,7 +186,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
 
 class FavoriteGetSerializer(serializers.ModelSerializer):
-    """ Сериализатор для отображения избранного. """
+    """Сериализатор для отображения избранного."""
 
     class Meta:
         model = Recipe
@@ -193,7 +194,7 @@ class FavoriteGetSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionsSerializer(SpecialUserSerializer):
-    """ Сериализатор для отображения подписок пользователя. """
+    """Сериализатор для отображения подписок пользователя."""
 
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
