@@ -36,21 +36,7 @@ class RecipeFilter(FilterSet):
 
 
 class IngredientSearchFilter(FilterSet):
-    # name = CharFilter(field_name='name', lookup_expr='istartswith')
-
-    name = CharFilter(method='search_by_name')
-
-    def search_by_name(self, queryset, name, value):
-        if not value:
-            return queryset
-        startswith_queryset = (
-            queryset.filter(name__istartswith=value).annotate(order=0))
-        contains_queryset = (
-            queryset.filter(name__icontains=value).exclude(
-                pk__in=(ingredient.pk for ingredient in startswith_queryset)
-            ).annotate(order=1)
-        )
-        return startswith_queryset.union(contains_queryset).order_by('order')
+    name = CharFilter(field_name='name', lookup_expr='istartswith')
 
     class Meta:
         model = Ingredient
