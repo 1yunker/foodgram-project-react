@@ -1,13 +1,9 @@
 from django.db import IntegrityError
-# from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from djoser import utils
 from djoser.conf import settings as djoser_settings
 from djoser.views import TokenCreateView, UserViewSet
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
-# from django_filters.rest_framework import DjangoFilterBackend
-# from rest_framework import filters, mixins
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
@@ -20,6 +16,7 @@ from api.serializers import (FavoriteGetSerializer, IngredientSerializer,
                              RecipeCreateSerializer, RecipeGetSerializer,
                              SubscriptionsSerializer, TagSerializer)
 from api.services import generate_shopping_list
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 
 
 class CustomUserViewSet(UserViewSet):
