@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from recipes.models import Ingredient, Favorite, Recipe, ShoppingCart, Tag
+from recipes.models import (Ingredient, Favorite, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -13,13 +14,37 @@ class IngredientAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
+class TagInline(admin.TabularInline):
+    model = Recipe.tags.through
+    extra = 1
+    verbose_name = 'Тег'
+    verbose_name_plural = 'Теги'
+
+
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    fk_name = 'recipe'
+    extra = 1
+    verbose_name = 'Ингридиент'
+    verbose_name_plural = 'Ингридиенты'
+
+
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'author', 'name', 'text', 'image',
                     'cooking_time', 'pub_date',)
+    inlines = (TagInline, RecipeIngredientInline,)
+    readonly_fields = ('count_in_favorites',)
+
     search_fields = ('author', 'name',)
     list_filter = ('author', 'name', 'tags', 'cooking_time',)
     list_select_related = True
     empty_value_display = '-пусто-'
+
+    @admin.display(
+        description='Общее число добавлений в избранное'
+    )
+    def count_in_favorites(self, obj):
+        return obj.in_favorites.count()
 
 
 class TagAdmin(admin.ModelAdmin):
