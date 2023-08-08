@@ -53,12 +53,12 @@ class Subscrption(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'following'],
+                fields=('user', 'following'),
                 name='unique_following'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'{self.user} подписан на {self.following}'

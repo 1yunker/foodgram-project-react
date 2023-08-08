@@ -18,7 +18,7 @@ class Tag(models.Model):
         validators=(
             RegexValidator(
                 regex=r'^#(?:[0-9a-fA-F]{3}){1,2}$',
-                message=('Enter valid hex color number')
+                message=('Введите цвет в HEX-формате: например, #E26C2D')
             ),
         )
     )
@@ -29,7 +29,7 @@ class Tag(models.Model):
         validators=(
             RegexValidator(
                 regex=r'^[-a-zA-Z0-9_]+$',
-                message=('Enter valid slug name')
+                message=('Введите слаг в формате [-a-zA-Z0-9_]')
             ),
         )
     )
@@ -90,7 +90,7 @@ class Recipe(models.Model):
         unique=True
     )
     text = models.TextField('Описание')
-    image = models.ImageField('Ссылка на картинку на сайте')
+    image = models.ImageField('Ссылка на картинку')
     cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления (мин.)',
         default=1,
@@ -110,7 +110,8 @@ class Recipe(models.Model):
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
-        auto_now_add=True)
+        auto_now_add=True
+    )
 
     class Meta:
         verbose_name = 'Рецепт'
