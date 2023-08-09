@@ -139,6 +139,41 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         return response
 
+    def add_to(self, model, request, recipe, errors):
+        """
+        Добавить рецепт в список покупок или в избранное.
+        Параметры:
+            model: имя модели из models
+            errors: текстовое сообщение об ошибке при добавлении в базу
+        """
+        try:
+            model.objects.create(user=request.user, recipe=recipe)
+        except IntegrityError:
+            return Response(
+                {'errors': errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = FavoriteGetSerializer(
+            instance=recipe, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete_from(self, model, request, recipe, errors):
+        """
+        Удалить рецепт из списка покупок или из избранного.
+        Параметры:
+            model: имя модели из models
+            errors: текстовое сообщение об ошибке при удалении из базы
+        """
+        try:
+            model.objects.get(user=request.user, recipe=recipe).delete()
+        except model.DoesNotExist:
+            return Response(
+                {'errors': errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def add_to_shopping_cart(self, request, recipe):
         """ Добавить рецепт в список покупок. """
         try:
@@ -174,8 +209,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """ Список покупок. """
         recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         if request.method == 'POST':
-            return self.add_to_shopping_cart(request, recipe)
-        return self.delete_from_shopping_cart(request, recipe)
+            # return self.add_to_shopping_cart(request, recipe)
+            return self.add_to(
+                ShoppingCart, request, recipe,
+                'Данный рецепт уже есть в списке покупок!'
+            )
+        # return self.delete_from_shopping_cart(request, recipe)
+        return self.delete_from(
+            ShoppingCart, request, recipe,
+            'Данного рецепта нет в списке покупок!'
+        )
 
     def add_to_favorite(self, request, recipe):
         """ Добавить рецепт в избранное. """
@@ -211,5 +254,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, **kwargs):
         recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         if request.method == 'POST':
-            return self.add_to_favorite(request, recipe)
-        return self.delete_from_favorite(request, recipe)
+            # return self.add_to_favorite(request, recipe)
+            return self.add_to(
+                Favorite, request, recipe,
+                'Данный рецепт уже есть в избранном!'
+            )
+        # return self.delete_from_favorite(request, recipe)
+        return self.delete_from(
+            Favorite, request, recipe,
+            'Данного рецепта нет в избранном!'
+        )
