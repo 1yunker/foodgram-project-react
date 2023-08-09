@@ -1,5 +1,5 @@
 from django.db import IntegrityError
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from djoser import utils
 from djoser.conf import settings as djoser_settings
@@ -76,13 +76,7 @@ class CustomUserViewSet(UserViewSet):
             detail=True,
             permission_classes=(IsAuthenticated,))
     def subscribe(self, request, **kwargs):
-        try:
-            author = get_object_or_404(User, pk=kwargs.get('id'))
-        except Http404:
-            return Response(
-                {'detail': 'Страница не найдена.'},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        author = get_object_or_404(User, pk=kwargs.get('id'))
         if request.method == 'POST':
             return self.create_subscribe(request, author)
         return self.delete_subscribe(request, author)
@@ -107,7 +101,6 @@ class CustomTokenCreateView(TokenCreateView):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    http_method_names = ('get',)
     filterset_class = IngredientSearchFilter
     pagination_class = None
 
@@ -115,7 +108,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    http_method_names = ('get',)
     pagination_class = None
 
 
@@ -180,13 +172,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, **kwargs):
         """ Список покупок. """
-        try:
-            recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
-        except Http404:
-            return Response(
-                {'detail': 'Страница не найдена.'},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         if request.method == 'POST':
             return self.add_to_shopping_cart(request, recipe)
         return self.delete_from_shopping_cart(request, recipe)
@@ -223,13 +209,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             detail=True,
             permission_classes=(IsAuthenticated,))
     def favorite(self, request, **kwargs):
-        try:
-            recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
-        except Http404:
-            return Response(
-                {'detail': 'Страница не найдена.'},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         if request.method == 'POST':
             return self.add_to_favorite(request, recipe)
         return self.delete_from_favorite(request, recipe)
