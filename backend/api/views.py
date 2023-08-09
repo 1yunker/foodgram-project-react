@@ -26,7 +26,9 @@ class CustomUserViewSet(UserViewSet):
             detail=False,
             permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
-        """Мои подписки."""
+        """
+        Возвращает пользователей, на которых подписан текущий пользователь.
+        """
         queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
         if page is not None:
