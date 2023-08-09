@@ -22,9 +22,11 @@ from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 class CustomUserViewSet(UserViewSet):
     """Пользователи."""
 
-    @action(['GET'],
-            detail=False,
-            permission_classes=(IsAuthenticated,))
+    @action(
+        ['GET'],
+        detail=False,
+        permission_classes=(IsAuthenticated,)
+    )
     def subscriptions(self, request):
         """
         Возвращает пользователей, на которых подписан текущий пользователь.
@@ -72,9 +74,11 @@ class CustomUserViewSet(UserViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 
-    @action(['POST', 'DELETE'],
-            detail=True,
-            permission_classes=(IsAuthenticated,))
+    @action(
+        ['POST', 'DELETE'],
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
     def subscribe(self, request, **kwargs):
         author = get_object_or_404(User, pk=kwargs.get('id'))
         if request.method == 'POST':
@@ -114,7 +118,6 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsOwner,)
-    http_method_names = ('get', 'post', 'patch', 'delete',)
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
@@ -125,9 +128,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(['GET'],
-            detail=False,
-            permission_classes=(IsAuthenticated,))
+    @action(
+        detail=False,
+        permission_classes=(IsAuthenticated,)
+    )
     def download_shopping_cart(self, request):
         """ Скачать список покупок. """
         if not request.user.in_shopping_cart.exists():
@@ -174,92 +178,37 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def add_to_shopping_cart(self, request, recipe):
-        """ Добавить рецепт в список покупок. """
-        try:
-            ShoppingCart.objects.create(user=request.user, recipe=recipe)
-        except IntegrityError:
-            return Response(
-                {'errors': 'Данный рецепт уже есть в списке покупок!'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        serializer = FavoriteGetSerializer(
-            instance=recipe, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def delete_from_shopping_cart(self, request, recipe):
-        """ Удалить рецепт из списка покупок. """
-        try:
-            ShoppingCart.objects.get(
-                user=request.user, recipe=recipe).delete()
-        except ShoppingCart.DoesNotExist:
-            return Response(
-                {'errors': 'Данного рецепта нет в списке покупок!'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return Response(
-            status=status.HTTP_204_NO_CONTENT
-        )
-
-    @action(['POST', 'DELETE'],
-            detail=True,
-            permission_classes=(IsAuthenticated,))
+    @action(
+        ['POST', 'DELETE'],
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
     def shopping_cart(self, request, **kwargs):
         """ Список покупок. """
         recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         if request.method == 'POST':
-            # return self.add_to_shopping_cart(request, recipe)
             return self.add_to(
                 ShoppingCart, request, recipe,
                 'Данный рецепт уже есть в списке покупок!'
             )
-        # return self.delete_from_shopping_cart(request, recipe)
         return self.delete_from(
             ShoppingCart, request, recipe,
             'Данного рецепта нет в списке покупок!'
         )
 
-    def add_to_favorite(self, request, recipe):
-        """ Добавить рецепт в избранное. """
-        try:
-            Favorite.objects.create(user=request.user, recipe=recipe)
-        except IntegrityError:
-            return Response(
-                {'errors': 'Данный рецепт уже есть в избранном!'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        serializer = FavoriteGetSerializer(
-            instance=recipe, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def delete_from_favorite(self, request, recipe):
-        """ Удалить рецепт из избранного. """
-        try:
-            Favorite.objects.get(
-                user=request.user, recipe=recipe).delete()
-        except ShoppingCart.DoesNotExist:
-            return Response(
-                {'errors': 'Данного рецепта нет в избранном!'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return Response(
-            status=status.HTTP_204_NO_CONTENT
-        )
-
-    @action(['POST', 'DELETE'],
-            detail=True,
-            permission_classes=(IsAuthenticated,))
+    @action(
+        ['POST', 'DELETE'],
+        detail=True,
+        permission_classes=(IsAuthenticated,)
+    )
     def favorite(self, request, **kwargs):
+        """ Избранное. """
         recipe = get_object_or_404(Recipe, pk=kwargs.get('pk'))
         if request.method == 'POST':
-            # return self.add_to_favorite(request, recipe)
             return self.add_to(
                 Favorite, request, recipe,
                 'Данный рецепт уже есть в избранном!'
             )
-        # return self.delete_from_favorite(request, recipe)
         return self.delete_from(
             Favorite, request, recipe,
             'Данного рецепта нет в избранном!'
