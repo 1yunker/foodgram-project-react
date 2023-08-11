@@ -108,6 +108,18 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Список тегов'
     )
+    favorites = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through='Favorite',
+        related_name='favorite_recipes',
+        verbose_name='Список избранного'
+    )
+    carts = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through='ShoppingCart',
+        related_name='recipes_in_shopping_cart',
+        verbose_name='Список покупок'
+    )
     pub_date = models.DateTimeField(
         'Дата публикации',
         auto_now_add=True
@@ -182,12 +194,12 @@ class Favorite(models.Model):
     class Meta:
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_vaforites'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'{self.user} {self.recipe}'
@@ -212,12 +224,12 @@ class ShoppingCart(models.Model):
     class Meta:
         verbose_name = 'Покупка'
         verbose_name_plural = 'Список покупок'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_shopping_items'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'{self.user} {self.recipe}'

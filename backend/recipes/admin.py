@@ -4,6 +4,7 @@ from recipes.models import (Ingredient, Favorite, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 
 
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'measurement_unit',)
     search_fields = ('name',)
@@ -29,6 +30,7 @@ class RecipeIngredientInline(admin.TabularInline):
     verbose_name_plural = 'Ингридиенты'
 
 
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'author', 'name', 'text', 'image',
                     'cooking_time', 'pub_date',)
@@ -47,6 +49,7 @@ class RecipeAdmin(admin.ModelAdmin):
         return obj.in_favorites.count()
 
 
+@admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'color', 'slug',)
     search_fields = ('name', 'slug',)
@@ -54,8 +57,5 @@ class TagAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Tag, TagAdmin)
 admin.site.register(Favorite)
 admin.site.register(ShoppingCart)
