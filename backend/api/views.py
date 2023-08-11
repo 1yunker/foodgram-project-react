@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from users.models import Subscrption, User
 
 from api.filters import RecipeFilter
-from api.permissions import IsOwner
+from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (FavoriteGetSerializer, IngredientSerializer,
                              RecipeCreateSerializer, RecipeGetSerializer,
                              SubscriptionsSerializer, TagSerializer)
@@ -118,7 +118,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsOwner,)
+    permission_classes = (IsAuthorOrReadOnly,)
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
