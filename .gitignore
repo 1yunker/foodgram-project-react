@@ -128,8 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# .idea
+# IDE files
 .idea
+.vscode/
 
 # static
 collected_static
