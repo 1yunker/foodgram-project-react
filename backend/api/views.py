@@ -4,13 +4,13 @@ from django.shortcuts import get_object_or_404
 from djoser import utils
 from djoser.conf import settings as djoser_settings
 from djoser.views import TokenCreateView, UserViewSet
-from rest_framework import status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from users.models import Subscrption, User
 
-from api.filters import IngredientSearchFilter, RecipeFilter
+from api.filters import RecipeFilter
 from api.permissions import IsOwner
 from api.serializers import (FavoriteGetSerializer, IngredientSerializer,
                              RecipeCreateSerializer, RecipeGetSerializer,
@@ -105,7 +105,8 @@ class CustomTokenCreateView(TokenCreateView):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filterset_class = IngredientSearchFilter
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^name',)
     pagination_class = None
 
 

@@ -1,7 +1,6 @@
 from django_filters.rest_framework import (AllValuesMultipleFilter,
-                                           BooleanFilter, CharFilter,
-                                           FilterSet)
-from recipes.models import Ingredient, Recipe
+                                           BooleanFilter, FilterSet)
+from recipes.models import Recipe
 
 
 class RecipeFilter(FilterSet):
@@ -13,29 +12,13 @@ class RecipeFilter(FilterSet):
     def get_is_favorited(self, queryset, name, value):
         if not value:
             return queryset
-        # добываем все записи из Favorite по текущему пользователю
-        favorites = self.request.user.in_favorites.all()
-        return queryset.filter(
-            pk__in=(favorite.recipe.pk for favorite in favorites)
-        )
+        return queryset.filter(who_likes__id=self.request.user.id)
 
     def get_is_in_shopping_cart(self, queryset, name, value):
         if not value:
             return queryset
-        # добываем все записи из ShoppingCart по текущему пользователю
-        shopping_cart = self.request.user.in_shopping_cart.all()
-        return queryset.filter(
-            pk__in=(item.recipe.pk for item in shopping_cart)
-        )
+        return queryset.filter(who_buys__id=self.request.user.id)
 
     class Meta:
         model = Recipe
         fields = ('is_favorited', 'is_in_shopping_cart', 'author', 'tags')
-
-
-class IngredientSearchFilter(FilterSet):
-    name = CharFilter(field_name='name', lookup_expr='istartswith')
-
-    class Meta:
-        model = Ingredient
-        fields = ('name',)

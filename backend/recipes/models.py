@@ -108,13 +108,13 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Список тегов'
     )
-    favorites = models.ManyToManyField(
+    who_likes = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through='Favorite',
         related_name='favorite_recipes',
         verbose_name='Список избранного'
     )
-    carts = models.ManyToManyField(
+    who_buys = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through='ShoppingCart',
         related_name='recipes_in_shopping_cart',
