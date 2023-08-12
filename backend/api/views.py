@@ -1,4 +1,4 @@
-from django.db import IntegrityError
+# from django.db import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from djoser import utils
@@ -153,9 +153,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             model: имя модели из models
             errors: текстовое сообщение об ошибке при добавлении в базу
         """
-        try:
-            model.objects.create(user=request.user, recipe=recipe)
-        except IntegrityError:
+        _, created = model.objects.get_or_create(
+            user=request.user,
+            recipe=recipe
+        )
+        if not created:
             return Response(
                 {'errors': errors},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -172,9 +174,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
             model: имя модели из models
             errors: текстовое сообщение об ошибке при удалении из базы
         """
-        try:
-            model.objects.get(user=request.user, recipe=recipe).delete()
-        except model.DoesNotExist:
+        cnt_deleted, _ = model.objects.filter(
+            user=request.user,
+            recipe=recipe
+        ).delete()
+
+        if cnt_deleted == 0:
             return Response(
                 {'errors': errors},
                 status=status.HTTP_400_BAD_REQUEST,
