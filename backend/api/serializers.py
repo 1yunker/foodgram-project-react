@@ -1,3 +1,5 @@
+from django.db import transaction
+# from django.db.models import Subquery
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -78,7 +80,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     author = SpecialUserSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(
-        many=True, source='recipe_ingredients')
+        many=True, source='recipe_ingredients'
+    )
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -107,25 +110,32 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
 
+    @transaction.atomic
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
+
+        data = []
         for tag in tags:
-            RecipeTag.objects.create(
-                recipe=recipe,
-                tag=tag
-            )
+            data.append(RecipeTag(recipe=recipe, tag=tag))
+        RecipeTag.objects.bulk_create(data)
+
+        data.clear()
         for ingredient in ingredients:
             ingredient_id = ingredient.get('ingredient')
             current_ingredient = Ingredient.objects.get(pk=ingredient_id)
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient=current_ingredient,
-                amount=ingredient.get('amount')
+            data.append(
+                RecipeIngredient(
+                    recipe=recipe,
+                    ingredient=current_ingredient,
+                    amount=ingredient.get('amount')
+                )
             )
+        RecipeIngredient.objects.bulk_create(data)
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         # Удаляем данные из подчиненных таблиц
         RecipeTag.objects.filter(recipe=instance).delete()
@@ -138,21 +148,25 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time', instance.cooking_time
         )
 
+        data = []
         tags = validated_data.pop('tags')
         for tag in tags:
-            RecipeTag.objects.create(
-                recipe=instance,
-                tag=tag
-            )
+            data.append(RecipeTag(recipe=instance, tag=tag))
+        RecipeTag.objects.bulk_create(data)
+
+        data.clear()
         ingredients = validated_data.pop('ingredients')
         for ingredient in ingredients:
             ingredient_id = ingredient.get('ingredient')
             current_ingredient = Ingredient.objects.get(pk=ingredient_id)
-            RecipeIngredient.objects.create(
-                recipe=instance,
-                ingredient=current_ingredient,
-                amount=ingredient.get('amount')
+            data.append(
+                RecipeIngredient(
+                    recipe=instance,
+                    ingredient=current_ingredient,
+                    amount=ingredient.get('amount')
+                )
             )
+        RecipeIngredient.objects.bulk_create(data)
 
         instance.save()
         return instance
