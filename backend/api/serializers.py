@@ -1,10 +1,7 @@
-from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 
-from api.permissions import IsOwner
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from users.models import User
 
@@ -28,7 +25,7 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SpecialUserSerializer(serializers.ModelSerializer):
+class SpecialUserSerializer(UserSerializer):
     """Сериализатор пользователя при отображении пользователя."""
 
     is_subscribed = serializers.SerializerMethodField()
@@ -37,8 +34,7 @@ class SpecialUserSerializer(serializers.ModelSerializer):
         return obj.following.filter(
             user=self.context['request'].user.id).exists()
 
-    class Meta:
-        model = User
+    class Meta(UserSerializer.Meta):
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
                   'is_subscribed',)
 
@@ -52,8 +48,8 @@ class CustomUserCreateSerializer(UserCreateSerializer):
                   'password',)
 
 
-class RecipeCreateIngredientSerializer(serializers.ModelSerializer):
-    """Сериализатор ингредиента при создании рецепта."""
+class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор ингредиентов при создании рецепта."""
 
     id = serializers.IntegerField(source='ingredient')
 
@@ -63,7 +59,7 @@ class RecipeCreateIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    """Сериализатор ингредиента при отображении рецепта."""
+    """Сериализатор ингредиентов при отображении рецепта."""
 
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
@@ -81,14 +77,10 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
     tags = TagSerializer(many=True)
     author = SpecialUserSerializer(read_only=True)
-    ingredients = serializers.SerializerMethodField()
+    ingredients = RecipeIngredientSerializer(
+        many=True, source='recipe_ingredients')
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
-
-    def get_ingredients(self, obj):
-        """Список ингредиентов."""
-        ingredients = RecipeIngredient.objects.filter(recipe=obj)
-        return RecipeIngredientSerializer(ingredients, many=True).data
 
     def get_is_favorited(self, obj):
         """Находится ли рецепт в избранном."""
@@ -102,23 +94,19 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        exclude = ('pub_date',)
+        exclude = ('pub_date', 'who_likes', 'who_buys',)
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания рецепта."""
 
-    ingredients = RecipeCreateIngredientSerializer(many=True)
+    ingredients = RecipeIngredientCreateSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
     )
     image = Base64ImageField()
 
-    @action(
-        permission_classes=(IsAuthenticated,),
-        detail=False,
-    )
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
@@ -138,10 +126,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
         return recipe
 
-    @action(
-        permission_classes=(IsOwner,),
-        detail=True,
-    )
     def update(self, instance, validated_data):
         # Удаляем данные из подчиненных таблиц
         RecipeTag.objects.filter(recipe=instance).delete()
