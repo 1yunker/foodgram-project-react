@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
-
 from users.validators import username_validator
 
 
@@ -27,10 +26,6 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ('username',)
-
-    @property
-    def is_admin(self):
-        return (self.is_superuser or self.is_staff)
 
     def __str__(self):
         return self.username

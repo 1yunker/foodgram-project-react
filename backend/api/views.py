@@ -8,7 +8,6 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
-from users.models import Subscrption, User
 
 from api.filters import RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
@@ -17,13 +16,13 @@ from api.serializers import (FavoriteGetSerializer, IngredientSerializer,
                              SubscriptionsSerializer, TagSerializer)
 from api.services import generate_shopping_list
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from users.models import Subscrption, User
 
 
 class CustomUserViewSet(UserViewSet):
     """Пользователи."""
 
     @action(
-        ['GET'],
         detail=False,
         permission_classes=(IsAuthenticated,)
     )
@@ -42,37 +41,40 @@ class CustomUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create_subscribe(self, request, author):
-        """Подписаться на пользователя."""
+        """Подписаться на пользователя (автора)."""
         if request.user == author:
             return Response(
                 {'errors': 'Подписываться на себя запрещено!'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        try:
-            Subscrption.objects.create(user=request.user, following=author)
-        except IntegrityError:
+        _, created = Subscrption.objects.get_or_create(
+            user=request.user,
+            following=author
+        )
+        if not created:
             return Response(
                 {'errors': 'Подписка на данного автора уже оформлена!'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         serializer = SubscriptionsSerializer(
-            instance=author, context={'request': request}
+            instance=author,
+            context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_subscribe(self, request, author):
-        """Отписаться от пользователя."""
-        try:
-            Subscrption.objects.get(
-                user=request.user, following=author).delete()
-        except Subscrption.DoesNotExist:
+        """Отписаться от пользователя (автора)."""
+        cnt_deleted, _ = Subscrption.objects.filter(
+            user=request.user,
+            following=author
+        ).delete()
+
+        if cnt_deleted == 0:
             return Response(
                 {'errors': 'Подписка на данного автора не оформлена!'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response(
-            status=status.HTTP_204_NO_CONTENT
-        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         ['POST', 'DELETE'],
