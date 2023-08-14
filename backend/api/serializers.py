@@ -1,5 +1,5 @@
 from django.db import transaction
-# from django.db.models import Subquery
+# from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -82,18 +82,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(
         many=True, source='recipe_ingredients'
     )
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
-
-    def get_is_favorited(self, obj):
-        """Находится ли рецепт в избранном."""
-        return obj.in_favorites.filter(
-            user=self.context['request'].user.id).exists()
-
-    def get_is_in_shopping_cart(self, obj):
-        """Находится ли рецепт в корзине."""
-        return obj.in_shopping_cart.filter(
-            user=self.context['request'].user.id).exists()
+    is_favorited = serializers.BooleanField()
+    is_in_shopping_cart = serializers.BooleanField()
 
     class Meta:
         model = Recipe
@@ -110,37 +100,56 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
 
-    @transaction.atomic
-    def create(self, validated_data):
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
+    def find_idx(self, lst, key, value):
+        for i, dic in enumerate(lst):
+            if dic[key] == value:
+                return i
+        return -1
 
+    def create_tags(self, tags, recipe):
         data = []
         for tag in tags:
             data.append(RecipeTag(recipe=recipe, tag=tag))
         RecipeTag.objects.bulk_create(data)
 
-        data.clear()
-        for ingredient in ingredients:
-            ingredient_id = ingredient.get('ingredient')
-            current_ingredient = Ingredient.objects.get(pk=ingredient_id)
+    def create_ingredients(self, ingredients, recipe):
+        data = []
+        # for ingredient in ingredients:
+        #     ingredient_id = ingredient.get('ingredient')
+        #     obj_ingredient = get_object_or_404(Ingredient, pk=ingredient_id)
+        #     data.append(
+        #         RecipeIngredient(
+        #             recipe=recipe,
+        #             ingredient=obj_ingredient,
+        #             amount=ingredient.get('amount')
+        #         )
+        #     )
+        obj_ingredients = Ingredient.objects.filter(
+            pk__in=[ingredient['ingredient'] for ingredient in ingredients]
+        )
+        for obj_ingredient in obj_ingredients:
+            idx = self.find_idx(ingredients, 'ingredient', obj_ingredient.pk)
             data.append(
                 RecipeIngredient(
                     recipe=recipe,
-                    ingredient=current_ingredient,
-                    amount=ingredient.get('amount')
+                    ingredient=obj_ingredient,
+                    amount=ingredients[idx].get('amount')
                 )
             )
         RecipeIngredient.objects.bulk_create(data)
+
+    @transaction.atomic
+    def create(self, validated_data):
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
+
+        recipe = Recipe.objects.create(**validated_data)
+        self.create_tags(tags, recipe)
+        self.create_ingredients(ingredients, recipe)
         return recipe
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        # Удаляем данные из подчиненных таблиц
-        RecipeTag.objects.filter(recipe=instance).delete()
-        RecipeIngredient.objects.filter(recipe=instance).delete()
-
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
@@ -148,25 +157,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time', instance.cooking_time
         )
 
-        data = []
         tags = validated_data.pop('tags')
-        for tag in tags:
-            data.append(RecipeTag(recipe=instance, tag=tag))
-        RecipeTag.objects.bulk_create(data)
+        RecipeTag.objects.filter(recipe=instance).delete()
+        self.create_tags(tags, instance)
 
-        data.clear()
         ingredients = validated_data.pop('ingredients')
-        for ingredient in ingredients:
-            ingredient_id = ingredient.get('ingredient')
-            current_ingredient = Ingredient.objects.get(pk=ingredient_id)
-            data.append(
-                RecipeIngredient(
-                    recipe=instance,
-                    ingredient=current_ingredient,
-                    amount=ingredient.get('amount')
-                )
-            )
-        RecipeIngredient.objects.bulk_create(data)
+        RecipeIngredient.objects.filter(recipe=instance).delete()
+        self.create_ingredients(ingredients, instance)
 
         instance.save()
         return instance

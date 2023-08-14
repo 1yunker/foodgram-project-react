@@ -1,4 +1,4 @@
-# from django.db import IntegrityError
+from django.db.models import Count, OuterRef, Subquery
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from djoser import utils
@@ -119,9 +119,26 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
     permission_classes = (IsAuthorOrReadOnly,)
     filterset_class = RecipeFilter
+
+    def get_queryset(self):
+        from_user_favorite = Favorite.objects.filter(
+            recipe=OuterRef('pk'),
+            user=self.request.user.id
+        )
+        from_shopping_cart = ShoppingCart.objects.filter(
+            recipe=OuterRef('pk'),
+            user=self.request.user.id
+        )
+        return Recipe.objects.annotate(
+            is_favorited=Count(
+                Subquery(from_user_favorite.values('recipe'))
+            ),
+            is_in_shopping_cart=Count(
+                Subquery(from_shopping_cart.values('recipe'))
+            )
+        )
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
