@@ -1,9 +1,7 @@
 from django.db.models import Count, OuterRef, Subquery
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from djoser import utils
-from djoser.conf import settings as djoser_settings
-from djoser.views import TokenCreateView, UserViewSet
+from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
@@ -86,22 +84,6 @@ class CustomUserViewSet(UserViewSet):
         if request.method == 'POST':
             return self.create_subscribe(request, author)
         return self.delete_subscribe(request, author)
-
-
-class CustomTokenCreateView(TokenCreateView):
-    """
-    Получить токен авторизации.
-    Переопределяем метод _action для соответсвия документации API:
-    status = HTTP_201_CREATED
-    """
-
-    def _action(self, serializer):
-        token = utils.login_user(self.request, serializer.user)
-        token_serializer_class = djoser_settings.SERIALIZERS.token
-        return Response(
-            data=token_serializer_class(token).data,
-            status=status.HTTP_201_CREATED
-        )
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):

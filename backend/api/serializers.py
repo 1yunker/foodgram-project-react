@@ -1,5 +1,4 @@
 from django.db import transaction
-# from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -100,30 +99,20 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
 
-    def find_idx(self, lst, key, value):
-        for i, dic in enumerate(lst):
-            if dic[key] == value:
-                return i
-        return -1
-
     def create_tags(self, tags, recipe):
         data = []
         for tag in tags:
             data.append(RecipeTag(recipe=recipe, tag=tag))
         RecipeTag.objects.bulk_create(data)
 
+    def find_idx(self, lst, key, value):
+        for i, dic in enumerate(lst):
+            if dic[key] == value:
+                return i
+        return -1
+
     def create_ingredients(self, ingredients, recipe):
         data = []
-        # for ingredient in ingredients:
-        #     ingredient_id = ingredient.get('ingredient')
-        #     obj_ingredient = get_object_or_404(Ingredient, pk=ingredient_id)
-        #     data.append(
-        #         RecipeIngredient(
-        #             recipe=recipe,
-        #             ingredient=obj_ingredient,
-        #             amount=ingredient.get('amount')
-        #         )
-        #     )
         obj_ingredients = Ingredient.objects.filter(
             pk__in=[ingredient['ingredient'] for ingredient in ingredients]
         )
