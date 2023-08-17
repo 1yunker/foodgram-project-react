@@ -113,6 +113,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe=OuterRef('pk'),
             user=self.request.user.id
         )
+        # 1. Если запрос сделает аноним, то не упадем, т.к. используем id юзера
+        # 2. Не совсем понял зачем джоинить автора и фетчить теги:
+        # в модели рецепта же они есть...
         return Recipe.objects.annotate(
             is_favorited=Count(
                 Subquery(from_user_favorite.values('recipe'))
