@@ -140,8 +140,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         shopping_list = generate_shopping_list(request.user)
         response = FileResponse(
-            io.BytesIO(shopping_list.encode("utf-8"),
-                       content_type="text/x-python"),
+            io.BytesIO(shopping_list.encode("utf-8")),
+            content_type="text/x-python",
             as_attachment=True,
             filename='shopping_list.txt'
         )
