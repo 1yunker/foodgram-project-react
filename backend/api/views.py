@@ -1,5 +1,6 @@
-from django.db.models import Count, OuterRef, Subquery
-from django.http import HttpResponse
+import io
+from django.db.models import Exists, OuterRef
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
@@ -105,25 +106,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        from_user_favorite = Favorite.objects.filter(
-            recipe=OuterRef('pk'),
-            user=self.request.user.id
-        )
-        from_shopping_cart = ShoppingCart.objects.filter(
-            recipe=OuterRef('pk'),
-            user=self.request.user.id
-        )
-        # 1. Если запрос сделает аноним, то не упадем, т.к. используем id юзера
-        # 2. Не совсем понял зачем джоинить автора и фетчить теги:
-        # в модели рецепта же они есть...
-        return Recipe.objects.annotate(
-            is_favorited=Count(
-                Subquery(from_user_favorite.values('recipe'))
-            ),
-            is_in_shopping_cart=Count(
-                Subquery(from_shopping_cart.values('recipe'))
+        if self.request.user.is_authenticated:
+            from_user_favorite = Favorite.objects.filter(
+                recipe=OuterRef('pk'),
+                user=self.request.user.id
             )
-        )
+            from_shopping_cart = ShoppingCart.objects.filter(
+                recipe=OuterRef('pk'),
+                user=self.request.user.id
+            )
+            return Recipe.objects.select_related(
+                'author').prefetch_related(
+                'tags', 'ingredients').annotate(
+                is_favorited=Exists(from_user_favorite),
+                is_in_shopping_cart=Exists(from_shopping_cart)
+            )
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -142,9 +139,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if not request.user.in_shopping_cart.exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
         shopping_list = generate_shopping_list(request.user)
-        response = HttpResponse(
-            shopping_list,
-            content_type='shopping_list.txt; charset=utf-8'
+        response = FileResponse(
+            io.BytesIO(shopping_list.encode("utf-8"),
+                       content_type="text/x-python"),
+            as_attachment=True,
+            filename='shopping_list.txt'
         )
         return response
 

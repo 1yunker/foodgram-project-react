@@ -9,15 +9,18 @@ class RecipeFilter(FilterSet):
     is_in_shopping_cart = BooleanFilter(method='get_is_in_shopping_cart')
     tags = AllValuesMultipleFilter(field_name='tags__slug')
 
-    def get_is_favorited(self, queryset, name, value):
+    def filter_by_user(self, queryset, name, value, related_name_id):
         if not value:
             return queryset
-        return queryset.filter(who_likes__id=self.request.user.id)
+        if self.request.user.is_authenticated:
+            return queryset.filter(**{related_name_id: self.request.user.id})
+        return Recipe.objects.none()
+
+    def get_is_favorited(self, queryset, name, value):
+        return self.filter_by_user(queryset, name, value, 'who_likes__id')
 
     def get_is_in_shopping_cart(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(who_buys__id=self.request.user.id)
+        return self.filter_by_user(queryset, name, value, 'who_buys__id')
 
     class Meta:
         model = Recipe
