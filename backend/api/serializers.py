@@ -1,5 +1,7 @@
 from django.db import transaction
-from djoser.serializers import UserCreateSerializer, UserSerializer
+from djoser.serializers import (
+    UserCreateSerializer as DjoserUserCreateSerialiser,
+    UserSerializer as DjoserUserSerialiser)
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
@@ -26,7 +28,7 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SpecialUserSerializer(UserSerializer):
+class UserSerializer(DjoserUserSerialiser):
     """Сериализатор пользователя при отображении пользователя."""
 
     is_subscribed = serializers.SerializerMethodField()
@@ -35,12 +37,12 @@ class SpecialUserSerializer(UserSerializer):
         return obj.following.filter(
             user=self.context['request'].user.id).exists()
 
-    class Meta(UserSerializer.Meta):
+    class Meta(DjoserUserSerialiser.Meta):
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
                   'is_subscribed',)
 
 
-class CustomUserCreateSerializer(UserCreateSerializer):
+class UserCreateSerializer(DjoserUserCreateSerialiser):
     """Сериализатор пользователя при создании пользователя."""
 
     class Meta:
@@ -77,7 +79,7 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения рецепта."""
 
     tags = TagSerializer(many=True)
-    author = SpecialUserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(
         many=True, source='recipe_ingredients'
     )
@@ -177,7 +179,7 @@ class FavoriteGetSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class SubscriptionsSerializer(SpecialUserSerializer):
+class SubscriptionsSerializer(UserSerializer):
     """Сериализатор для отображения подписок пользователя."""
 
     recipes = serializers.SerializerMethodField()
@@ -197,6 +199,5 @@ class SubscriptionsSerializer(SpecialUserSerializer):
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()
 
-    class Meta(SpecialUserSerializer.Meta):
-        fields = SpecialUserSerializer.Meta.fields + (
-            'recipes', 'recipes_count',)
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
