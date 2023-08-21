@@ -115,12 +115,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 recipe=OuterRef('pk'),
                 user=self.request.user.id
             )
-            return Recipe.objects.select_related(
-                'author').prefetch_related(
-                'tags', 'ingredients').annotate(
-                is_favorited=Exists(from_user_favorite),
-                is_in_shopping_cart=Exists(from_shopping_cart)
+            return (
+                Recipe.objects
+                .select_related('author')
+                .prefetch_related('tags', 'ingredients')
+                .annotate(
+                    is_favorited=Exists(from_user_favorite),
+                    is_in_shopping_cart=Exists(from_shopping_cart)
+                )
             )
+        return (
+            Recipe.objects
+            .select_related('author')
+            .prefetch_related('tags', 'ingredients')
+            .all()
+        )
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
