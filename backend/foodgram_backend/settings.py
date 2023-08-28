@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_filters',
     'djoser',
+    'colorfield',
 
     'api.apps.ApiConfig',
     'recipes.apps.RecipesConfig',
@@ -59,6 +60,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'foodgram_backend.wsgi.application'
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 DATABASES = {
     'default': {
