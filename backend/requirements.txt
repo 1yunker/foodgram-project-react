@@ -5,6 +5,8 @@ charset-normalizer==3.2.0
 cryptography==41.0.2
 defusedxml==0.7.1
 Django==3.2.3
+django-colorfield==0.9.0
+django-debug-toolbar==3.2.4
 django-filter==23.2
 django-templated-mail==1.1.1
 djangorestframework==3.12.4
@@ -12,7 +14,6 @@ djangorestframework-simplejwt==5.2.2
 djoser==2.2.0
 drf-extra-fields==3.6.1
 filetype==1.2.0
-gunicorn==20.1.0
 idna==3.4
 oauthlib==3.2.2
 Pillow==10.0.0
